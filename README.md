@@ -2,6 +2,6 @@
 A selenium script to download your entire Amazon ebooks library while it is still allowed.
 
 
-Requires python and selenium, as well as firefox.
+The .py script requires python and selenium, as well as firefox. The .exe is a standalone version of the same code packaged using pyinstaller, it only requires firefox.
 
-Run the script from a terminal, and tell it which URL to start downloading from. It will open a browser to that page. Once you've logged in, press any key in the terminal and the script will download all content it can find to the default download location.
+Running either version will ask the user to input the URL to their amazon kindle library in a terminal window. It will then open a browser to that page; once you've logged in press any key in the terminal and it will download all content it can find to the browser's default download location.
