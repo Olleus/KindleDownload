@@ -6,21 +6,23 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 
 example_url = "https://www.amazon.co.uk/hz/mycd/digital-console/contentlist/booksAll/dateDsc/"
-wait_time = 5  # Time in seconds to give browser second chance at loading a page 
+popup_key = '..//div[starts-with(@id, "DOWNLOAD_AND_TRANSFER_DIALOG")]'
+short_wait = 0.25
+long_wait = 5
 
 
 def main():
-    print("Enter url to download from (will automatically do future pages)\n\
-Should look something like: " + example_url)
+    print("Enter url to download from, should look something like: " + example_url + "\n...")
     url = input()
+    init_page = input("Enter page to start from (default 1): ")
+    init_page = int(init_page) if init_page else 1
 
     browser = launch(url)
-    download_next_page(url, browser, 1)
+    download_next_page(url, browser, init_page)
 
 
 def launch(url):
-    opts = Options()
-    browser = Firefox(options=opts)
+    browser = Firefox(options=Options())
     browser.get(url)
     input("Press enter once logged in")
     return browser
@@ -29,7 +31,7 @@ def launch(url):
 def download_next_page(url, browser, page_number):
     page_url = f"{url}?pageNumber={page_number}"
     browser.get(page_url)
-    time.sleep(wait_time)
+    time.sleep(long_wait)
 
     if browser.current_url != page_url:
         print("No more pages")
@@ -44,43 +46,47 @@ def download_page(browser):
     drop_downs = browser.find_elements(By.ID, "dd_title")
 
     for k, drop_down in enumerate(drop_downs):
-        drop_down.click()
         try:
-            popup_link = drop_down.find_element(
-                        By.XPATH, '..//div[starts-with(@id, "DOWNLOAD_AND_TRANSFER_ACTION")]')
-        except Exception:
-            print("No download link found for entry")
-            close_drop_down(browser, drop_down)
-            continue
+            download_entry(browser, k, drop_down)
+        except Exception as e:
+            print(f"Could not locate actions for item {k+1}")
+            print(e)
+        
+        ActionChains(browser).click().perform()  # Closes any remaining open dialogue
+        time.sleep(short_wait)
 
-        download_from_popup_link(browser, popup_link)
-
-    print("All books on page downloaded\n")
-
-
-def download_from_popup_link(browser, popup_link):
-    popup_id = popup_link.get_attribute("id")[-10:]
-    popup_link.click()
-
-    click_delayed(browser.find_element, By.ID, f"download_and_transfer_list_{popup_id}_0")
-    click_delayed(browser.find_element, By.ID, f"DOWNLOAD_AND_TRANSFER_ACTION_{popup_id}_CONFIRM")
-    print(f"{popup_id} downloaded")
-    click_delayed(browser.find_element, By.ID, "notification-close")
+    print("Finished downloading page\n")
 
 
-def close_drop_down(browser, element):
-    action = ActionChains(browser)
-    action.click()
-    action.perform()
+def download_entry(browser, k, drop_down):
+    drop_down.click()
+    time.sleep(short_wait)
 
-
-def click_delayed(func, *args):
     try:
-        func(*args).click()
-    except Exception:
-        print("\twaiting...")
-        time.sleep(wait_time)
-        func(*args).click()
+        popup = drop_down.find_element(By.XPATH, popup_key)
+        download_from_popup(browser, k, popup)
+
+    except Exception as e:
+        print(f"Could not locate download action for item {k+1}")
+        print(e)
+
+
+def download_from_popup(browser, k, popup):
+    try:
+        popup_id = popup.get_attribute("id")[-10:]
+
+        popup.find_element(By.XPATH, "../..").click()
+        time.sleep(short_wait)
+        popup.find_element(By.ID, f"download_and_transfer_list_{popup_id}_0").click()
+        time.sleep(short_wait)
+        popup.find_element(By.XPATH, '..//div[contains(@id, "CONFIRM")]').click()
+        time.sleep(short_wait)
+        browser.find_element(By.ID, "notification-close").click()
+        time.sleep(short_wait)
+        print(f"Item {k+1} downloaded")
+    except Exception as e:
+        print(f"Could not download item {k+1}")
+        print(e)
 
 
 if __name__ == "__main__":
