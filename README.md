@@ -11,3 +11,6 @@ UPDATE 2025-02-21:
 Adapted to slight changes done by Amazon.
 More robust error handling.
 Option to start at a later page in library.
+
+FINAL UPDATE
+The planned changes at amazon having taken place, this code can no longer work. Closing project.
